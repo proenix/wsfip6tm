@@ -10,6 +10,8 @@ namespace ppgSH
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("#");
+
         }
     }
 }

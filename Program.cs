@@ -4,18 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Diagnostics;
+using System.Security;
 
 namespace ppgSH
 {
     class Program
     {
         static string sciezka_dost = ""; //aktualna sciezka gdzie się znajdujemy
-        static string sciezka_domyslna=@"c:\"; //w przypadku nieustawienia ścieżki
+        //static string sciezka_domyslna=@"c:\"; //w przypadku nieustawienia ścieżki
         const int MAX_IL_PARAM = 10; //maksymalna liczba parametrów polecenia
         static string[] polecenie; //tablica elementów polecenia z parametrami
         static string komenda, argumenty; //polecenie z parametrami w postaci stringów
         static bool warunek = true; //warunek czy konsola ma pracowac.
         static string prompt = "#";
+        static int poz_znaku_out, poz_znaku_in;
+        static bool przekierowanie_in, przekierowanie_out; //czy należy obsłużyć przekierowanie strumienia
         static void Main(string[] args)
         {
             polecenie = new string[MAX_IL_PARAM + 1];
@@ -41,20 +45,33 @@ namespace ppgSH
             komenda = polecenie[0];
             //połączenie w 1 string
             argumenty = String.Join(" ", polecenie, 1, polecenie.Length - 1);
+            //sprawdzenie czy polecenie zawiera znaki przekierowań < i >
+            przekierowanie_in = false;przekierowanie_out = false;
+            for (int n = 1; n < polecenie.GetUpperBound(0); n++)
+            {
+                if (polecenie[n] == ">")
+                {
+                    poz_znaku_out = n;
+                    przekierowanie_out = true;
+                }
+                if (polecenie[n] == "<")
+                {
+                    poz_znaku_in = n;
+                    przekierowanie_in = true;
+                }
+            }
             komenda.ToLower(); //myshell nie rozróżnia wielkości liter
             switch (komenda)
             {
                 case "echo":                    
-                    //argumenty = pol.Remove(0, 5); ///wersja ze spacjami wielokrotnymi
                     Echo(argumenty); //wersja bez spacji wielokrotnych
                     break;
                 case "quit":warunek = false;
                     break;
-                case "cd":Cd(@argumenty);
-                    break;
                 case "clr": Clr();
                     break;
-                case "dir":Dir(@argumenty);
+                case "cd":
+                    changeDirectory(argumenty);
                     break;
                 case "eviron":Eviron();
                     break;
@@ -62,9 +79,12 @@ namespace ppgSH
                     break;
                 case "pause":Pause();
                     break;
+                case "dir":
+                    showDirectory(argumenty);
+                    break;
                 default:
-                    if (Uruchom_w_tle(komenda,argumenty)) break;
-                    else Nierozpoznana_komenda(komenda); 
+                    if (Uruchom_w_tle(komenda, argumenty)) break;
+                    else Console.WriteLine("Operacja zakończona niepowodzeniem");
                     break;
             }
         }
@@ -73,50 +93,200 @@ namespace ppgSH
         {
             Console.WriteLine(@lista);
         }
-        
-        static bool Uruchom_w_tle(string nazwa,string argumenty)
+        static bool uruchom_bez_przekierowania(string program,string argumenty)
         {
+            Process process = new Process();
+            process.StartInfo.FileName = program;
+            process.StartInfo.Arguments = argumenty;
+            process.StartInfo.UseShellExecute = true;
+            try
+            {
+                process.Start();
+            }
+            catch (System.ComponentModel.Win32Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return false;
+            }
+            return true;
+        }
+        static bool uruchom_z_przekierowaniem(string program, string argumenty, string plik_in, string plik_out)
+        {
+            string plik = polecenie[poz_znaku_out + 1];
+            Process process = new Process();
+            //ustawienie parametrów procesu
+            process.StartInfo.FileName = program;
+            process.StartInfo.Arguments = argumenty;
+            process.StartInfo.UseShellExecute = false;
+            if (przekierowanie_in) process.StartInfo.RedirectStandardInput = true; //przekierowanie strumienia wejściowego
+            if (przekierowanie_out) //przekierowanie strumienia wyjściowego
+            {
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+            }
+            process.Start(); //uruchomienie procesu potomka
+            StreamWriter writer=null;
+            StreamReader reader=null,stdError=null;
+            string text="";
+            //obsługa przekierowania wejściowego
+            if (przekierowanie_in)
+            {
+                writer = process.StandardInput;
+                //odczytanie pliku
+                try
+                {
+                    text = File.ReadAllText(@plik_in);
+                }
+                catch (IOException e)
+                {
+                    //błąd we/wy przy czytaniu pliku wejściowego
+                    Console.WriteLine(e.Message);
+                    process.Close();
+                    writer.Close();
+                    return false;
+                }
+                catch (SecurityException e)
+                {
+                    //brak uprawnien do czytania pliku wejściowego
+                    Console.WriteLine(e.Message);
+                    process.Close();
+                    writer.Close();
+                    return false;
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Console.WriteLine(e.Message);
+                    process.Close();
+                    writer.Close();
+                    return false;
+                }
+                //zapisanie do procesu
+                writer.WriteLine(text);
+            }
+            // Synchronously read the standard output of the spawned process. 
+            if (przekierowanie_out)
+            {
+                reader = process.StandardOutput;
+                stdError = process.StandardError;
+                string output = reader.ReadToEnd();
+                string error = stdError.ReadToEnd();
+                //jeśli plik nie ustnieje to utwórz i zapisz treść a jeśli istnieje to dopisz
+                try
+                {
+                    File.AppendAllText(@plik_out, output + error);
+                }
+                catch (IOException)
+                {
+                    Console.WriteLine("IO Error ({0})", @plik_out);
+                    process.Close();
+                    reader.Close();
+                    stdError.Close();
+                    if (przekierowanie_in) writer.Close();
+                    return false;
+                }
+                catch (SecurityException e)
+                {
+                    Console.WriteLine(e.Message);
+                    process.Close();
+                    reader.Close();
+                    stdError.Close();
+                    if (przekierowanie_in) writer.Close();
+                    return false;
+                }
+                catch (UnauthorizedAccessException e)
+                {
+                    Console.WriteLine(e.Message);
+                    process.Close();
+                    reader.Close();
+                    stdError.Close();
+                    if (przekierowanie_in) writer.Close();
+                    return false;
+                }
+                
+            }
+            //oczekiwanie na zakończenie procesu
+            process.WaitForExit();
+            //zwolnienie zasobów 
+            process.Close();
+            if (przekierowanie_in) writer.Close();
+            if (przekierowanie_out)
+            {
+                reader.Close();
+                stdError.Close();
+            }
+            return true;
+           
+                }
+        static bool Uruchom_w_tle(string nazwa,string argumenty)
+        {  
             string sciezka_procesu="";
             //sprawdzenie czy sciezka kończy się znakiem /
-            if (sciezka_dost.Length == 0) sciezka_procesu = sciezka_domyslna; 
-                else if (sciezka_dost[sciezka_dost.Length - 1] != '\\') sciezka_procesu = sciezka_dost +@"\" ;
+            sciezka_dost = Directory.GetCurrentDirectory(); 
+            if (sciezka_dost[sciezka_dost.Length - 1] != '\\') sciezka_procesu = sciezka_dost +@"\" ;
             //sprawdzenie czy polecenie kończy się na .exe
-            if (nazwa.Length < 5) nazwa += ".exe"; //dla krótkich nazw
-                else
-            {
-                char[] koncowka = new char[4];
-                nazwa.CopyTo(nazwa.Length - 4, koncowka, 0, 4);
-                string konc = new String(koncowka);
-                if (konc != ".exe") nazwa = nazwa + ".exe";
-            }
             sciezka_procesu += nazwa;
-            //sprawdzenie czy program istnieje
+            FileInfo fin = new FileInfo(sciezka_procesu);
+            //jeżeli nazwa programu nie kończy się rozszerzeniem to dodaj .exe
+            if (fin.Extension == "") sciezka_procesu += ".exe";
+             //jeżeli jest to plik niewykonywalny to wypisz komunikat
+             else if ((fin.Extension!=".exe") && (fin.Extension != ".com"))
+            {
+                if (fin.Exists)
+                {
+                    Console.WriteLine("plik {0} jest niewykonywalny", nazwa);
+                    return true;
+                } else return false;
+                
+            }
+            // jeśli plik exe lub com istnieje to go wykonaj
             if (File.Exists(sciezka_procesu))
             {
-                if (argumenty == "") System.Diagnostics.Process.Start(sciezka_procesu);
-                else System.Diagnostics.Process.Start(@sciezka_procesu, argumenty);
-                return true;
+                //jeśli polecenie nie zawiera przekierowań
+                if (!przekierowanie_out && !przekierowanie_in)
+                {
+                    uruchom_bez_przekierowania(sciezka_procesu, argumenty);
+                    return true;
+                } else
+                {
+                    //uruchom polecenie z przekierowaniem
+                    string file_in, file_out;
+                    if (przekierowanie_out) file_out = polecenie[poz_znaku_out + 1]; else file_out = "";
+                    if (przekierowanie_in)
+                    {
+                        file_in = polecenie[poz_znaku_in + 1];
+                        //sprawdzenie czy plik wejściowy istnieje
+                        if (!File.Exists(file_in))
+                        {
+                            Console.WriteLine("Pliku wejściowy nie istnieje ({0})", file_in);
+                            return false;
+                        }
+                    }
+                    else file_in = "";
+
+                    //pozycja końca argumentów
+                    int poz;
+                    if (!przekierowanie_in) poz = poz_znaku_out;
+                    else if (!przekierowanie_out) poz = poz_znaku_in;
+                    else poz = Math.Min(poz_znaku_in, poz_znaku_out);
+                    //argumenty programu
+                    argumenty = String.Join(" ", polecenie, 1, poz - 1);
+                    uruchom_z_przekierowaniem(sciezka_procesu, argumenty, file_in, file_out);
+                    return true;
+                }
             }
             else
             {
-                //Console.WriteLine("Brak: (" + sciezka_procesu + ")");
-                return false;
+                Console.WriteLine("Nieznana komenda lub plik nie istnieje ({0})", nazwa);
+                return true;
             }
 
         }
         static void Nierozpoznana_komenda(string plik)
         {
-            Console.WriteLine("Nieznana komenda lub plik nie istnieje.("+plik+")");
+            Console.WriteLine("Nieznana komenda lub plik nie istnieje.({0})",plik);
         }
-        static void Cd(string katalog)
-        {
-
-        }
+ 
         static void Clr()
-        {
-
-        }
-        static void Dir(string katalog)
         {
 
         }
@@ -132,5 +302,146 @@ namespace ppgSH
         {
 
         }
-    }
-}
+          /**
+           * Info.
+           *
+           * Kolory:
+           * Dla katalogow ConsoleColor.Blue;
+           * Dla plikow ConsoleColor.White;
+           */        
+
+           /**
+           * W przypadku braku sciezki wyswietla aktualna sciezke.
+           * Przy podaniu blednej lub zbyt dlugiej sciezki wyswietla blad.
+           * 
+ -         * @params string dir Sciezka do zmiany.
+           * @params string|null dir Sciezka do zmiany.
+           */
+             /**
+           * Zmienia aktualny katalog roboczy.
+           * 
+           * Katalog roboczy aplikacji jest zmieniany na wybrany przez usera.
+           * Sciezka nie jest case sensitive.
+           * Akceptuje sciezki relatywne oraz absolutne.
+           * W przypadku braku sciezki wyswietla aktualna sciezke.
+           * Przy podaniu blednej lub zbyt dlugiej sciezki wyswietla blad.
+           * 
+           * @params string dir Sciezka do zmiany.
+           */
+           static void changeDirectory(string dir)
+         {
+                          try
+               {
+                 Directory.SetCurrentDirectory(dir);
+                              }
+                          catch (ArgumentNullException e)
+               {
+                                  // Pokazuje aktualny katalog roboczy aplikacji.
+                 Console.WriteLine(Directory.GetCurrentDirectory());
+                              }
+                          catch (DirectoryNotFoundException e)
+               {
+                 Console.WriteLine("Provided path was not found.");
+                              }
+                          catch (PathTooLongException e)
+               {
+                 Console.WriteLine("File or directory name exceed system-defined maximum lenght.");
+                              }
+                          catch (ArgumentException e)
+               {
+                 Console.WriteLine("Provided path contains invalid characters.");
+                              }
+                          catch (Exception e)
+               {
+                 Console.WriteLine("An unknown error occured.");
+                              }
+            }
+           /**
+           * Pokazuje wszystie pliki w aktualnym katalogu.
+           * 
+           * Wypluwa date, godzine, typ (katalog/plik) i nazwe pliku/katalogu.
+           * 
+           * @param string|null dir Katalog do sprawdzenia.
+           */
+         static void showDirectory(string dir)
+         {
+              IEnumerable<string> dirData;
+              IEnumerable<string> fileData;
+              try
+              {
+                  // Jesli argument dir nie zostal podany uzyj aktualnego katalogu roboczego.
+                  if ((dir == null) || (dir==""))
+                  {
+                      dirData = Directory.EnumerateDirectories(Directory.GetCurrentDirectory());
+                     fileData = Directory.EnumerateFiles(Directory.GetCurrentDirectory());
+                      Console.WriteLine("Directory of {0}\n", Directory.GetCurrentDirectory());
+                  } 
+                  else
+                  {
+                      dirData = Directory.EnumerateDirectories(dir);
+                      fileData = Directory.EnumerateFiles(dir);
+                      Console.WriteLine("Directory of {0}\n", dir);
+                  }
+  
+                  // Da magics
+                  Console.ForegroundColor = ConsoleColor.Blue;
+                  // Info o aktualnym katalogu.
+                  Console.WriteLine("{0,-18}{1,-7}{2,-10}",
+                      Directory.GetCreationTime(".").ToString("yyyy-MM-dd HH:mm"),
+                      "<DIR>",
+                      ".");
+                  // Info o katalogu wyzej.
+                  Console.WriteLine("{0,-18}{1,-7}{2,-10}",
+                      Directory.GetCreationTime("..").ToString("yyyy-MM-dd HH:mm"),
+                       "<DIR>",
+                       "..");
+   
+                   foreach (string record in dirData)                
+                   {
+                       Console.WriteLine("{0,-18}{1,-7}{2,-10}",
+                           Directory.GetCreationTime(record).ToString("yyyy-MM-dd HH:mm"),
+                           "<DIR>",
+                           record.Substring(record.LastIndexOf('\\')  + 1));
+                   }
+   
+                   Console.ForegroundColor = ConsoleColor.White;
+                   foreach (string record in fileData)
+                   {
+                       Console.WriteLine("{0,-18}{1,-7}{2,-10}",
+                           Directory.GetCreationTime(record).ToString("yyyy-MM-dd HH:mm"),
+                           " ",
+                           record.Substring(record.LastIndexOf('\\')  + 1));
+                   }
+   
+                   // Powrot do standardowego koloru.
+                   Console.ResetColor();
+               }
+               catch (ArgumentException e)
+               {
+                   // Bledny argument same spacje etc
+                   Console.WriteLine("Provided path contains invalid characters.");
+               }
+               catch (DirectoryNotFoundException e)
+               {
+                   // Katalogu nie znaleziono
+                   Console.WriteLine("Provided path was not found.");
+               }
+               catch (IOException e)
+               {
+                   // Podane coś jest plikiem
+                   Console.WriteLine("Provided path is a file.");
+               }
+               catch (UnauthorizedAccessException e)
+               {
+                   // Brak pozwolenia na otwarcie katalogu.
+                   Console.WriteLine("You don't have required permisssion.");
+               }
+               catch (Exception e)
+               {
+                   //Pozostale bledy jesli jakies wystapia
+                   Console.WriteLine("Unexpected error occured.");
+               }
+           }
+       }
+   }
+

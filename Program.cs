@@ -17,19 +17,28 @@ namespace ppgSH
         static string[] polecenie; //tablica elementów polecenia z parametrami
         static string komenda, argumenty; //polecenie z parametrami w postaci stringów
         static bool warunek = true; //warunek czy konsola ma pracowac.
-        static string prompt = "#";
-        static int poz_znaku_out, poz_znaku_in;
+        static string prompt = "#"; //wyswietlana podpowiedź
+        static string path_MyShell; //ścieżka dostępu do programu MyShell
+        static int poz_znaku_out, poz_znaku_in; //pozycje przekierowań in i out w tabicy polecenie
         static bool przekierowanie_in, przekierowanie_out; //czy należy obsłużyć przekierowanie strumienia
         static void Main(string[] args)
         {
             polecenie = new string[MAX_IL_PARAM + 1];
+            //ustawienie tytułu
+            Console.Title = "MyShell";
+            //pobranie katalogu w którym jest MyShell
+            //sposób alternatywny(chyba pewniejszy) do Directory.GetCurrentDirectory();
+            string path_sys = System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase;
+            Uri path_uri = new Uri(path_sys);
+            path_MyShell = Path.GetDirectoryName(path_uri.LocalPath);
             Console.WriteLine("MyShell v1.0");
+            //wykonuj pętlę aż do momentu wyjścia (warunek=false)
             while (warunek)
             {
                 string pol = czytaj_z_konsoli();
-                Wykonaj_komende(pol);
+                Wykonaj_komende(pol); 
             }
-
+            
         }
         static public string czytaj_z_konsoli()
         {
@@ -60,6 +69,13 @@ namespace ppgSH
                     przekierowanie_in = true;
                 }
             }
+            //sprawdzenie czy nie chcemy wywołać pomocy dla komendy (/?)
+            if (argumenty!="") //jeśli polecenie zawiera argumenty
+                if ((polecenie[1]=="/?") || (polecenie[1]==@"\?"))//wywołanie pomocy dla komendy
+                {
+                    Help(komenda);
+                    return;
+                }
             komenda.ToLower(); //myshell nie rozróżnia wielkości liter
             switch (komenda)
             {
@@ -84,7 +100,8 @@ namespace ppgSH
                     break;
                 default:
                     if (Uruchom_w_tle(komenda, argumenty)) break;
-                    else Console.WriteLine("Operacja zakończona niepowodzeniem");
+                    else //jeśli nie udało sie uruchomić komendy
+                        Console.WriteLine("Operacja zakończona niepowodzeniem");
                     break;
             }
         }
@@ -97,6 +114,7 @@ namespace ppgSH
         {
             Process process = new Process();
             process.StartInfo.FileName = program;
+            //wpisanie argumentów
             process.StartInfo.Arguments = argumenty;
             process.StartInfo.UseShellExecute = true;
             try
@@ -105,11 +123,13 @@ namespace ppgSH
             }
             catch (System.ComponentModel.Win32Exception e)
             {
+                //błąd otwarcia pliku
                 Console.WriteLine(e.Message);
                 return false;
             }
             return true;
         }
+        //uruchomia proces jednocześnie przekierowując wy lub/i we programu na plik
         static bool uruchom_z_przekierowaniem(string program, string argumenty, string plik_in, string plik_out)
         {
             string plik = polecenie[poz_znaku_out + 1];
@@ -177,7 +197,7 @@ namespace ppgSH
                 }
                 catch (IOException)
                 {
-                    Console.WriteLine("IO Error ({0})", @plik_out);
+                    Console.WriteLine("Błąd we/wy ({0})", @plik_out);
                     process.Close();
                     reader.Close();
                     stdError.Close();
@@ -296,7 +316,44 @@ namespace ppgSH
         }
         static void Help(string polecenie)
         {
-
+           
+            string line; //zmienna zawierająca wczytywaną linie
+            string plik_help = @path_MyShell + @"\help.txt";
+            //jeśli plik pomocy nie istnieje
+            if (!File.Exists(plik_help))
+                { Console.WriteLine("Brak pliku pomocy (help.txt)"); return; }
+            //utworzenie strumienia czytającego plik help
+            StreamReader file = new StreamReader(@plik_help);
+            //przy braku parametrów wyświetl pomoc ogólną
+            if (polecenie == "" || polecenie == null)
+            {
+                while ((line = file.ReadLine()) != "koniec")
+                {
+                    System.Console.WriteLine(line);
+                }
+                return;
+            } else 
+            //jeśli podano komendę dla której mamy wyświetlić  pomoc
+            {
+                //szukana linia
+                string title_line = "Polecenie " + polecenie.ToUpper();
+                //szukanie komendy w pliku help.txt
+                do
+                {
+                    line = file.ReadLine();
+                    if (line == null)
+                    {
+                        Console.WriteLine("Nie znaleziono pomocy dla {0}", polecenie);
+                        return;
+                    }
+                } while (line != title_line);
+                //wczytywanie pomocy linia po linii do linii "koniec"
+                while ((line = file.ReadLine()) != "koniec")
+                {
+                    System.Console.WriteLine(line);
+                }
+            }
+            
         }
         static void Pause()
         {

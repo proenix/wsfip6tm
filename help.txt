@@ -1,0 +1,96 @@
+﻿MyShell v1.0 help
+Aby uzyskać informacje o komendzie pisz HELP command lub command /?
+CD          pokazuje lub zmienia bieżący katalog
+CLR         czyści ekran konsoli
+DIR         wyświetla zawartość bieźącego lub wybranego katalogu
+ENVIRON     wyświetla zmienne środowiskowe
+ECHO        wyświetla podany komunikat
+HELP        wyświetla pomoc dla danej komendy
+PAUSE       blokuje konsolę do czasu naciśnięcia Enter
+QUIT        wyjśćie z konsoli
+MyShell nie rozróżnia wielkości liter więc można pisać komendy 
+małymi lub dużymi literami. Jeśli MyShell nie znajdzie polecenia
+jako komendy wbudowanej to szuka czy istnieje program o tej nazwie
+w katalogu bieżącym oraz w katalogach ustawionych zmienną  
+-path-. Jeśli program istnieje to MyShell uruchamia go z podanymi
+parametrami.Wywołanie:
+program-name arg1 ... argn > plik.txt
+powoduje przekierowanie wyjścia programu "program-name" do pliku
+"plik.txt". Wywołanie:
+program-name arg1 ... argn < plik.txt
+powoduje że program "program-name" bedzie czytał dane wejściowe
+z pliku "plik.txt". Program MyShell można uruchomić z parametrem 
+którym jest nazwa pliku np.:
+MyShell batch.txt
+wtedy Myshell wykonuje polecenia zawarte w pliku wsadowym batch.txt.
+koniec
+Polecenie CD
+CD - pokazuje lub zmienia bieżący katalog
+Użycie:CD [drive:\][path]       drive i path opcjonalnie
+CD                  - wyświetla bieżący katalog.
+CD drive:\          - zmienia bieżące urządzenie na drive.
+CD path             - zmienia aktualny katalog dodając path.
+CD drive:\path      - zmienia katalog urządzenia drive na path
+Przykłady:
+CD c:\windows       -zmienia katalog na c:\windows
+CD                  - pokazuje bieżący katalog MyShell-a
+CD system32         - zmienia bieżący katalog dodając do niego "system32"
+koniec
+Polecenie CLR
+CLR - czyści ekran konsoli, przenosi kursor na początek tekstu w konsoli
+Użycie:CLR            polecenie nie wymaga parametrów
+CRL                  - czyści konsolę jednak nie kasuje historii poleceń
+koniec
+Polecenie DIR
+DIR           - wyswietla zawartość bieżącego lub zadanego katalogu,wyswietla
+                listę plików(w kolorze białym) i podkatalogów(na niebiesko).
+		Dla plików podaje datę i czas założenia oraz nazwe pliku, dla
+		katalogów podaje datę i czas założenia,nazwę katalogu oraz
+		informację <DIR>, która mówi że dany wpis jest katalogiem. 
+		Nie zmienia bieżącego katalogu.	W przypadku podania nie 
+		istniejącej ścieżki,braku praw dostępu,	niewłaściwych znaków
+		(np.@&) pokazuje odpowiedni błąd.
+Użycie:DIR [drive:\][path]  drive-napęd(opcjonalnie),path-ścieżka(opcjonalnie)
+DIR                 - pokazuje zawartość bieżącego katalogu.
+DIR drive:\         - pokazuje zawartość katalogu roota dla urządzenia drive:
+DIR drive:\path     - pokazje zawartość katalogu dla ścieżki "drive:\path"
+DIR path            - pokazuje zawartość ścieżki path w bieżącym katalogu
+Przykłady:
+DIR     - pokazuje bieżący katalog i jego zawartość
+DIR a:\\\b  - pokazuje błąd (ścieżka nie znaleziona)
+DIR notepad -pokazuje zawartość katalogu "notepad" jeżeli ten katalog jest
+             podkatalogiem bieżącego katalogu.
+koniec
+Polecenie EVIRON
+...
+uzupełnić
+...
+koniec
+Polecenie ECHO
+ECHO - wyświetla podany w parametrze komunikat
+Użycie:ECHO [message]       message-dowolny napis
+ECHO             - nic nie robi
+ECHO komunikat   -wyświetla na standardowym lub przekierowanym wyjściu 
+                  napis "komunikat"
+koniec
+Polecenie HELP
+HELP - wyświetla pomoc dla MyShell lub dla podanej komendy tego programu.
+       (to właśnie czytasz)
+Użycie:HELP [command]    command-wbudowana komenda MyShell-a(opcjonalnie)
+HELP        -  podaje ogólną pomoc dla MyShell
+HELP dir    -  podaje pomoc dla komendy dir
+Zamiast wpisywać "HELP command" można użyć polecenia "command /?"
+koniec
+Polecenie PAUSE
+PAUSE  - wstrzymuje pracę konsoli do naciśnięcia Enter
+Użycie: PAUSE             nie wymaga wpisywania parametrów
+PAUSE  - wstrzymuje pracę konsoli do momentu kiedy użytkownik naciśnie
+         Enter. Przydaje się np. przy obsłudze skryptów batch które mogą 
+		 być stopowane żeby przeczytać zawartosć wyjscia konsoli.
+koniec
+Polecenie QUIT
+QUIT - powoduje natychmiastowe wyjście z konsoli.
+Użycie:QUIT          nie wymaga podawania parametrów
+QUIT   - powoduje zakończenie pracy MyShell.Zamyka konsolę ale nie
+         zamyka ewentualnych procesów uruchomionych przez konsolę.
+koniec

@@ -147,5 +147,16 @@ namespace ppgSH
                 Console.WriteLine("Unexpected error occured.");
             }
         }
+
+        /**
+        * Wyswietla wszystkie zmienne systemowe.
+        */
+        static void showEnvironmentVariables()
+        {
+            foreach (DictionaryEntry e in System.Environment.GetEnvironmentVariables())
+            {
+                Console.WriteLine(e.Key + ": " + e.Value);
+            }
+        }
     }
 }

@@ -169,5 +169,26 @@ namespace ppgSH
             }
             Console.WriteLine(input);
         }
+
+       /**
+        * Kasuje wszystkie znaki z okna konsolowego.
+        * 
+        * W przypadku bledu funkcja konczy swoje dzialanie z efektem dzwiekowym.
+        *
+        * @param string|null input Tekst ktory ma zostac wypisany do pierwszej linii konsoli.
+        */
+        static void clearScreen(string input = null)
+        {
+            try
+            {
+                Console.Clear();
+            }
+            catch (Exception e)
+            {
+                Console.Beep();
+            }
+            if (input != null)
+                Console.WriteLine(input);
+        }
     }
 }

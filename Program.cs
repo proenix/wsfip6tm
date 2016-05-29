@@ -17,20 +17,20 @@ namespace ppgSH
         * Kolory:
         * Dla katalogow ConsoleColor.Blue;
         * Dla plikow ConsoleColor.White;
-        */        
+        */
         static void Main(string[] args)
         {
         }
 
         /**
         * Zmienia aktualny katalog roboczy.
-        * 
+        *
         * Katalog roboczy aplikacji jest zmieniany na wybrany przez usera.
         * Sciezka nie jest case sensitive.
         * Akceptuje sciezki relatywne oraz absolutne.
         * W przypadku braku sciezki wyswietla aktualna sciezke.
         * Przy podaniu blednej lub zbyt dlugiej sciezki wyswietla blad.
-        * 
+        *
         * @params string|null dir Sciezka do zmiany.
         */
         static void changeDirectory(string dir)
@@ -64,9 +64,9 @@ namespace ppgSH
 
         /**
         * Pokazuje wszystie pliki w aktualnym katalogu.
-        * 
+        *
         * Wypluwa date, godzine, typ (katalog/plik) i nazwe pliku/katalogu.
-        * 
+        *
         * @param string|null dir Katalog do sprawdzenia.
         */
         static void showDirectory(string dir)
@@ -102,7 +102,7 @@ namespace ppgSH
                     "<DIR>",
                     "..");
 
-                foreach (string record in dirData)                
+                foreach (string record in dirData)
                 {
                     Console.WriteLine("{0,-18}{1,-7}{2,-10}",
                         Directory.GetCreationTime(record).ToString("yyyy-MM-dd HH:mm"),
@@ -151,7 +151,7 @@ namespace ppgSH
 
         /**
         * Pokazuje w konsoli komunikat wpisany przez usera.
-        * 
+        *
         * W ramach dzialania funkcji usuwane sa nadmiarowe znaki biale.
         * W przypadku pustego badz blednego wejscia zostanie wydrukowany tylko znak nowej linii.
         *
@@ -172,7 +172,7 @@ namespace ppgSH
 
        /**
         * Kasuje wszystkie znaki z okna konsolowego.
-        * 
+        *
         * W przypadku bledu funkcja konczy swoje dzialanie z efektem dzwiekowym.
         *
         * @param string|null input Tekst ktory ma zostac wypisany do pierwszej linii konsoli.
@@ -189,6 +189,17 @@ namespace ppgSH
             }
             if (input != null)
                 Console.WriteLine(input);
+        }
+        
+        /**
+        * Wyswietla wszystkie zmienne systemowe.
+        */
+        static void showEnvironmentVariables()
+        {
+            foreach (DictionaryEntry e in System.Environment.GetEnvironmentVariables())
+            {
+                Console.WriteLine(e.Key + ": " + e.Value);
+            }
         }
     }
 }

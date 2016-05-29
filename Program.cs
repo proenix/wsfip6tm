@@ -154,8 +154,10 @@ namespace ppgSH
         * 
         * W ramach dzialania funkcji usuwane sa nadmiarowe znaki biale.
         * W przypadku pustego badz blednego wejscia zostanie wydrukowany tylko znak nowej linii.
+        *
+        * @param string|null input Linia do wyplucia.
         */
-        static void printEcho(string input)
+        static void printEcho(string input = null)
         {
             try
             {

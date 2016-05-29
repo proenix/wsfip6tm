@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Collections;
+using System.Text.RegularExpressions;
 
 namespace ppgSH
 {
@@ -146,6 +147,25 @@ namespace ppgSH
                 //Pozostale bledy jesli jakies wystapia
                 Console.WriteLine("Unexpected error occured.");
             }
+        }
+
+        /**
+        * Pokazuje w konsoli komunikat wpisany przez usera.
+        * 
+        * W ramach dzialania funkcji usuwane sa nadmiarowe znaki biale.
+        * W przypadku pustego badz blednego wejscia zostanie wydrukowany tylko znak nowej linii.
+        */
+        static void printEcho(string input)
+        {
+            try
+            {
+                input = Regex.Replace(input, @"\s+", " ");
+            }
+            catch (Exception e)
+            {
+                input = "";
+            }
+            Console.WriteLine(input);
         }
     }
 }

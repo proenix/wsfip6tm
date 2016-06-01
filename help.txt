@@ -61,10 +61,11 @@ DIR a:\\\b  - pokazuje błąd (ścieżka nie znaleziona)
 DIR notepad -pokazuje zawartość katalogu "notepad" jeżeli ten katalog jest
              podkatalogiem bieżącego katalogu.
 koniec
-Polecenie EVIRON
-...
-uzupełnić
-...
+Polecenie ENVIRON
+ENVIRON - wyświetla zmienne środowiskowe
+Użycie:ENVIRON      nie potrzebuje parametrów
+ENVIRON  -  wyświetla zmienne dla środowiska Windows, takie jak path,
+           windir itp.
 koniec
 Polecenie ECHO
 ECHO - wyświetla podany w parametrze komunikat

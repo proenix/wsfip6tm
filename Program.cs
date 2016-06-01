@@ -323,7 +323,7 @@ namespace ppgSH
                     showDirectory(argumenty);
                     break;
                 default:
-                    if (!Uruchom_w_tle(komenda, argumenty))
+                    if (!Uruchom(komenda, argumenty))
                         //jeśli nie udało sie uruchomić komendy
                         Console.WriteLine("Operacja zakończona niepowodzeniem");
                     break;

@@ -285,7 +285,7 @@ namespace ppgSH
                     break;
                 case "help": Help(argumenty);
                     break;
-                case "pause":Pause();
+                case "pause":pause();
                     break;
                 case "dir":
                     showDirectory(argumenty);
@@ -547,9 +547,22 @@ namespace ppgSH
             }
             
         }
-        static void Pause()
-        {
 
+        /**
+        * Wstrzymuje dzialanie programu do czasu wcisniecia klawisza Enter.
+        *
+        * Znaki wpisywane przez usera nie są wyświetlane.
+        * Zwraca pusta linie w razie sukcesu.
+        */
+        static void pause()
+        {
+            Console.WriteLine("Naciśnij klawisz Enter aby kontynuować...");
+            ConsoleKeyInfo c;
+            do
+            {
+                c = Console.ReadKey(true);
+            } while (c.Key != ConsoleKey.Enter);
+            printEcho();
         }
     }
 }

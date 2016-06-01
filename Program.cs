@@ -62,7 +62,7 @@ namespace ppgSH
         *
         * @params string|null dir Sciezka do zmiany.
         */
-        static void changeDirectory(string dir)
+        static void changeDirectory(string dir = null)
         {
             try
             {
@@ -95,17 +95,18 @@ namespace ppgSH
         * Pokazuje wszystie pliki w aktualnym katalogu.
         *
         * Wypluwa date, godzine, typ (katalog/plik) i nazwe pliku/katalogu.
+        * W przypadku podania pustej sciezki sprawdza aktualny katalog.
         *
         * @param string|null dir Katalog do sprawdzenia.
         */
-        static void showDirectory(string dir)
+        static void showDirectory(string dir = null)
         {
             IEnumerable<string> dirData;
             IEnumerable<string> fileData;
             try
             {
-                // Jesli argument dir nie zostal podany uzyj aktualnego katalogu roboczego.
-                if (dir == null)
+                // Jesli argument dir nie zostal podany lub jest pusty uzyj aktualnego katalogu roboczego.
+                if (dir == null || dir == "")
                 {
                     dirData = Directory.EnumerateDirectories(Directory.GetCurrentDirectory());
                     fileData = Directory.EnumerateFiles(Directory.GetCurrentDirectory());

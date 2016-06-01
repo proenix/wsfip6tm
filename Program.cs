@@ -60,10 +60,17 @@ namespace ppgSH
         /**
         * Parser dla wykonywania plikow batch.
         * Wymagane rozszerzenie pliku to .ppgsh
+        * W przypadku podania niczego jako pliku wypluwa wersje programu.
         * Linie z dowolna iloscia bialych znakow i // na poczatku beda ignorowane i traktowane jako komentarze.
         */
         static void batchParse(string file)
         {
+            if (file == "")
+            {
+                printEcho("Myshell 1.0");
+                return;
+            }
+
             if (!file.EndsWith(".ppgsh"))
                 printEcho("That's not a batch file.");
             try
@@ -359,6 +366,9 @@ namespace ppgSH
                     break;
                 case "dir":
                     showDirectory(argumenty);
+                    break;
+                case "myshell":
+                    batchParse(argumenty);
                     break;
                 default:
                     if (!Uruchom(komenda, argumenty))

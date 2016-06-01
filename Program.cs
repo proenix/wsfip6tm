@@ -11,18 +11,19 @@ using System.Security;
 
 namespace ppgSH
 {
+    /**
+    * MyShell
+    */
     class Program
     {
+        
+
         /**
-        * Info.
-        *
-        * Kolory:
-        * Dla katalogow ConsoleColor.Blue;
-        * Dla plikow ConsoleColor.White;
+        * Maksymalna liczba parametrów polecenia
         */
+        const int MAX_IL_PARAM = 10;
 
         static string sciezka_dost = ""; //aktualna sciezka gdzie się znajdujemy
-        const int MAX_IL_PARAM = 10; //maksymalna liczba parametrów polecenia
         static string[] polecenie; //tablica elementów polecenia z parametrami
         static string komenda, argumenty; //polecenie z parametrami w postaci stringów
         static bool warunek = true; //warunek czy konsola ma pracowac.
@@ -66,12 +67,18 @@ namespace ppgSH
         {
             try
             {
-                Directory.SetCurrentDirectory(dir);
+                if (dir != "")
+                { 
+                    Directory.SetCurrentDirectory(dir);
+                } else {
+                    Console.WriteLine(Directory.GetCurrentDirectory());
+                }
+                
             }
             catch (ArgumentNullException e)
             {
                 // Pokazuje aktualny katalog roboczy aplikacji.
-                Console.WriteLine(Directory.GetCurrentDirectory());
+                
             }
             catch (DirectoryNotFoundException e)
             {
@@ -232,18 +239,38 @@ namespace ppgSH
             }
         }
     
+        /**
+        * Czyta wpisy usera z linii komend.
+        *
+        * @return string
+        */
         static public string czytaj_z_konsoli()
         {
             Console.Write(prompt);
             return Console.ReadLine();
         }
+
+        /**
+        * Modul wykonujacy komendy.
+        * Przetwarza komende otrzymana od uzytkownika i wykonuje zwiazane z nia akcje.
+        */
         static void Wykonaj_komende(string pol)
         {
             char[] separator = { ' '};
             //rozbicie na tablicę stringów z redukcją spacji powtarzających się
-            polecenie = pol.Split(separator, MAX_IL_PARAM + 1, StringSplitOptions.RemoveEmptyEntries);
-            //pierwszy wyraz jest komendą
+
+            try
+            {
+                polecenie = pol.Split(separator, MAX_IL_PARAM + 1, StringSplitOptions.RemoveEmptyEntries);
+
+            }
+            catch (ArgumentException)
+            {
+                return;
+            } //pierwszy wyraz jest komendą
+            if ((polecenie == null) ||(polecenie.Length==0)) return;
             komenda = polecenie[0];
+            
             //połączenie w 1 string
             argumenty = String.Join(" ", polecenie, 1, polecenie.Length - 1);
             //sprawdzenie czy polecenie zawiera znaki przekierowań < i >
@@ -272,36 +299,42 @@ namespace ppgSH
             switch (komenda)
             {
                 case "echo":                    
-                    Echo(argumenty); //wersja bez spacji wielokrotnych
+                    printEcho(argumenty);
                     break;
-                case "quit":warunek = false;
+                case "quit":
+                    warunek = false;
                     break;
-                case "clr": Clr();
+                case "clr":
+                    clearScreen();
                     break;
                 case "cd":
                     changeDirectory(argumenty);
                     break;
-                case "eviron":Eviron();
+                case "environ":
+                    showEnvironmentVariables();
                     break;
-                case "help": Help(argumenty);
+                case "help":
+                    Help(argumenty);
                     break;
-                case "pause":pause();
+                case "pause":
+                    pause();
                     break;
                 case "dir":
                     showDirectory(argumenty);
                     break;
                 default:
-                    if (Uruchom_w_tle(komenda, argumenty)) break;
-                    else //jeśli nie udało sie uruchomić komendy
+                    if (!Uruchom_w_tle(komenda, argumenty))
+                        //jeśli nie udało sie uruchomić komendy
                         Console.WriteLine("Operacja zakończona niepowodzeniem");
                     break;
             }
         }
-        //prosty przykład komendy echo
-        static void Echo(string lista)
-        {
-            Console.WriteLine(@lista);
-        }
+
+        /**
+        * Uruchomienie lokalnego programu bez przekierowania wejscia/wyjscia.
+        *
+        * @return boolean W zaleznosci czy polecenie wykonalo sie poprawnie.
+        */
         static bool uruchom_bez_przekierowania(string program,string argumenty)
         {
             Process process = new Process();
@@ -321,7 +354,12 @@ namespace ppgSH
             }
             return true;
         }
-        //uruchomia proces jednocześnie przekierowując wy lub/i we programu na plik
+
+        /**
+        * Uruchomia proces jednocześnie przekierowując wy lub/i we programu na plik.
+        *
+        * @return boolean W zaleznosci czy polecenie wykonalo sie poprawnie.
+        */
         static bool uruchom_z_przekierowaniem(string program, string argumenty, string plik_in, string plik_out)
         {
             string plik = polecenie[poz_znaku_out + 1];
@@ -428,9 +466,17 @@ namespace ppgSH
             }
             return true;
            
-                }
+        }
+
+        /**
+        * Uruchamia program po jego nazwie.
+        */
         static bool Uruchom_w_tle(string nazwa,string argumenty)
         {  
+            // Jesli nazwa nie istnieje nie wykonuj dalszej czesci funkcji.
+            if (nazwa == null)
+                return false;
+
             string sciezka_procesu="";
             //sprawdzenie czy sciezka kończy się znakiem /
             sciezka_dost = Directory.GetCurrentDirectory(); 
@@ -493,19 +539,19 @@ namespace ppgSH
             }
 
         }
+
+        /**
+        * Zwraca komunikat o nieznanej komendzie do konsoli.
+        * @return void
+        */
         static void Nierozpoznana_komenda(string plik)
         {
             Console.WriteLine("Nieznana komenda lub plik nie istnieje.({0})",plik);
         }
- 
-        static void Clr()
-        {
 
-        }
-        static void Eviron()
-        {
-
-        }
+        /**
+        * Zwraca kominikaty pomocy dla danego polecenia.
+        */
         static void Help(string polecenie)
         {
            

@@ -487,7 +487,7 @@ namespace ppgSH
             //jeżeli nazwa programu nie kończy się rozszerzeniem to dodaj .exe
             if (fin.Extension == "") sciezka_procesu += ".exe";
              //jeżeli jest to plik niewykonywalny to wypisz komunikat
-             else if ((fin.Extension!=".exe") && (fin.Extension != ".com"))
+            else if ((fin.Extension!=".exe") && (fin.Extension != ".com"))
             {
                 if (fin.Exists)
                 {
@@ -496,7 +496,37 @@ namespace ppgSH
                 } else return false;
                 
             }
-            // jeśli plik exe lub com istnieje to go wykonaj
+            // Sprawdza czy plik istnieje w aktualnym katalogu jesli nie, to przeszukuje katalogi ze zmiennej systemowej PATH
+            // W przypadku znalezienia pasujacego pliku wykonywalnego uruchamia go.
+            if (!File.Exists(sciezka_procesu))
+            {
+                try
+                {
+                    string path = Environment.GetEnvironmentVariable("path");
+                    // Oszukana metoda na dodanie system32 do przeszukiwanych katalogow
+                    path += ";C:\\Windows\\system32\\";
+                    string[] tPath = path.Split(';');
+                    if (!nazwa.EndsWith(".exe"))
+                    {
+                        nazwa = nazwa + ".exe";
+                    }
+                    // Przeszukuje tablice ze sciezkami ze zmiennej PATH szukajac pliku nazwa(.exe)
+                    foreach (string pathDir in tPath)
+                    {
+                        string fullPath = pathDir + nazwa;
+                        if (File.Exists(fullPath))
+                        {
+                            sciezka_procesu = fullPath;
+                            break;
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Well something went really wrong.");
+                }
+            }
+
             if (File.Exists(sciezka_procesu))
             {
                 //jeśli polecenie nie zawiera przekierowań

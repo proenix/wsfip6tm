@@ -23,7 +23,6 @@ namespace ppgSH
         */
         const int MAX_IL_PARAM = 10;
 
-        static string sciezka_dost = ""; //aktualna sciezka gdzie się znajdujemy
         static string[] polecenie; //tablica elementów polecenia z parametrami
         static string komenda, argumenty; //polecenie z parametrami w postaci stringów
         static bool warunek = true; //warunek czy konsola ma pracowac.
@@ -37,12 +36,18 @@ namespace ppgSH
             polecenie = new string[MAX_IL_PARAM + 1];
             //ustawienie tytułu
             Console.Title = "MyShell";
+            
             //pobranie katalogu w którym jest MyShell
             //sposób alternatywny(chyba pewniejszy) do Directory.GetCurrentDirectory();
             string path_sys = System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase;
             Uri path_uri = new Uri(path_sys);
             path_MyShell = Path.GetDirectoryName(path_uri.LocalPath);
             Console.WriteLine("MyShell v1.0");
+
+            // W przypadku wywolania z argumentem sprawdza czy jest to prawidlowy plik batch (.ppgsh) jesli tak to wykonuje go.
+            if (args.Length != 0)
+                batchParse(args[0]);
+
             //wykonuj pętlę aż do momentu wyjścia (warunek=false)
             while (warunek)
             {
@@ -50,6 +55,36 @@ namespace ppgSH
                 Wykonaj_komende(pol); 
             }
             
+        }
+
+        /**
+        * Parser dla wykonywania plikow batch.
+        * Wymagane rozszerzenie pliku to .ppgsh
+        * Linie z dowolna iloscia bialych znakow i // na poczatku beda ignorowane i traktowane jako komentarze.
+        */
+        static void batchParse(string file)
+        {
+            if (!file.EndsWith(".ppgsh"))
+                printEcho("That's not a batch file.");
+            try
+            {
+                if (File.Exists(file))
+                {
+                    string line;
+                    System.IO.StreamReader batch = new System.IO.StreamReader(file);
+                    while ((line = batch.ReadLine()) != null)
+                    {
+                        if (!line.TrimStart().StartsWith("////"))
+                            Wykonaj_komende(line);
+                    }
+
+                    batch.Close();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("An error occured while parsing batch file.");
+            }
         }
 
         /**
@@ -304,6 +339,9 @@ namespace ppgSH
                 case "quit":
                     warunek = false;
                     break;
+                case "exit":
+                    warunek = false;
+                    break;
                 case "clr":
                     clearScreen();
                     break;
@@ -479,7 +517,7 @@ namespace ppgSH
 
             string sciezka_procesu="";
             //sprawdzenie czy sciezka kończy się znakiem /
-            sciezka_dost = Directory.GetCurrentDirectory(); 
+            string sciezka_dost = Directory.GetCurrentDirectory(); 
             if (sciezka_dost[sciezka_dost.Length - 1] != '\\') sciezka_procesu = sciezka_dost +@"\" ;
             //sprawdzenie czy polecenie kończy się na .exe
             sciezka_procesu += nazwa;
@@ -506,14 +544,18 @@ namespace ppgSH
                     // Oszukana metoda na dodanie system32 do przeszukiwanych katalogow
                     path += ";C:\\Windows\\system32\\";
                     string[] tPath = path.Split(';');
+                    string nazwa_ext;
                     if (!nazwa.EndsWith(".exe"))
                     {
-                        nazwa = nazwa + ".exe";
+                        nazwa_ext = nazwa + ".exe";
+                    } else
+                    {
+                        nazwa_ext = nazwa;
                     }
                     // Przeszukuje tablice ze sciezkami ze zmiennej PATH szukajac pliku nazwa(.exe)
                     foreach (string pathDir in tPath)
                     {
-                        string fullPath = pathDir + nazwa;
+                        string fullPath = pathDir + nazwa_ext;
                         if (File.Exists(fullPath))
                         {
                             sciezka_procesu = fullPath;

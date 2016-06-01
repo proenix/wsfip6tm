@@ -332,7 +332,8 @@ namespace ppgSH
 
         /**
         * Uruchomienie lokalnego programu bez przekierowania wejscia/wyjscia.
-        *
+        * Następuje wyświetlanie wyników w oknie konsoli. Konsola czeka
+        * na zakończenie procesu.
         * @return boolean W zaleznosci czy polecenie wykonalo sie poprawnie.
         */
         static bool uruchom_bez_przekierowania(string program,string argumenty)
@@ -341,7 +342,37 @@ namespace ppgSH
             process.StartInfo.FileName = program;
             //wpisanie argumentów
             process.StartInfo.Arguments = argumenty;
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            try
+            {
+                process.Start();
+            }
+            catch (System.ComponentModel.Win32Exception e)
+            {
+                //błąd otwarcia pliku
+                Console.WriteLine(e.Message);
+                return false;
+            }
+            // Synchronously read the standard output of the spawned process. 
+            StreamReader reader = process.StandardOutput;
+            string output = reader.ReadToEnd();
+            // Write the redirected output to this application's window.
+            Console.WriteLine(output);
+            process.WaitForExit();
+            process.Close();
+            return true;
+
+            
+        }
+        static bool uruchom_bez_przekierowania_w_tle(string program, string argumenty)
+        {
+            Process process = new Process();
+            process.StartInfo.FileName = program;
+            //wpisanie argumentów
+            process.StartInfo.Arguments = argumenty;
             process.StartInfo.UseShellExecute = true;
+            process.StartInfo.RedirectStandardOutput = false;
             try
             {
                 process.Start();
@@ -353,6 +384,8 @@ namespace ppgSH
                 return false;
             }
             return true;
+
+
         }
 
         /**
@@ -471,17 +504,23 @@ namespace ppgSH
         /**
         * Uruchamia program po jego nazwie.
         */
-        static bool Uruchom_w_tle(string nazwa,string argumenty)
+        static bool Uruchom(string nazwa,string argumenty)
         {  
             // Jesli nazwa nie istnieje nie wykonuj dalszej czesci funkcji.
             if (nazwa == null)
                 return false;
-
+            bool uruchom_w_tle = false; //czy urchamiać w tle(true) czy przekierowywać wyniki na konsolę(false)
             string sciezka_procesu="";
             //sprawdzenie czy sciezka kończy się znakiem /
             sciezka_dost = Directory.GetCurrentDirectory(); 
             if (sciezka_dost[sciezka_dost.Length - 1] != '\\') sciezka_procesu = sciezka_dost +@"\" ;
-            //sprawdzenie czy polecenie kończy się na .exe
+            //sprawdzenie czy polecenie kończy się na & (dla wywołania w tle)
+            if (nazwa[nazwa.Length-1]=='&')
+            {
+                uruchom_w_tle = true;
+                //wykasuj & z nazwy
+                nazwa=nazwa.Remove(nazwa.Length-1);
+            }
             sciezka_procesu += nazwa;
             FileInfo fin = new FileInfo(sciezka_procesu);
             //jeżeli nazwa programu nie kończy się rozszerzeniem to dodaj .exe
@@ -502,7 +541,8 @@ namespace ppgSH
                 //jeśli polecenie nie zawiera przekierowań
                 if (!przekierowanie_out && !przekierowanie_in)
                 {
-                    uruchom_bez_przekierowania(sciezka_procesu, argumenty);
+                    if (uruchom_w_tle) uruchom_bez_przekierowania_w_tle(sciezka_procesu, argumenty);
+                      else uruchom_bez_przekierowania(sciezka_procesu, argumenty);
                     return true;
                 } else
                 {

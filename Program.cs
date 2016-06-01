@@ -258,9 +258,19 @@ namespace ppgSH
         {
             char[] separator = { ' '};
             //rozbicie na tablicę stringów z redukcją spacji powtarzających się
-            polecenie = pol.Split(separator, MAX_IL_PARAM + 1, StringSplitOptions.RemoveEmptyEntries);
-            //pierwszy wyraz jest komendą
+
+            try
+            {
+                polecenie = pol.Split(separator, MAX_IL_PARAM + 1, StringSplitOptions.RemoveEmptyEntries);
+
+            }
+            catch (ArgumentException)
+            {
+                return;
+            } //pierwszy wyraz jest komendą
+            if ((polecenie == null) ||(polecenie.Length==0)) return;
             komenda = polecenie[0];
+            
             //połączenie w 1 string
             argumenty = String.Join(" ", polecenie, 1, polecenie.Length - 1);
             //sprawdzenie czy polecenie zawiera znaki przekierowań < i >

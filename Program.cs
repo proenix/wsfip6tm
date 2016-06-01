@@ -310,7 +310,7 @@ namespace ppgSH
                 case "cd":
                     changeDirectory(argumenty);
                     break;
-                case "eviron":
+                case "environ":
                     showEnvironmentVariables();
                     break;
                 case "help":

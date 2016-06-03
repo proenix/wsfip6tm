@@ -302,10 +302,11 @@ namespace ppgSH
             catch (ArgumentException)
             {
                 return;
-            } //pierwszy wyraz jest komendą
+            } 
+            //jesli polecenie jest puste
             if ((polecenie == null) ||(polecenie.Length==0)) return;
+            //pierwszy wyraz jest komendą
             komenda = polecenie[0];
-            
             //połączenie w 1 string
             argumenty = String.Join(" ", polecenie, 1, polecenie.Length - 1);
             //sprawdzenie czy polecenie zawiera znaki przekierowań < i >
@@ -392,7 +393,7 @@ namespace ppgSH
                 Console.WriteLine(e.Message);
                 return false;
             }
-            // Synchronously read the standard output of the spawned process. 
+             // Synchronously read the standard output of the spawned process. 
             StreamReader reader = process.StandardOutput;
             string output = reader.ReadToEnd();
             // Write the redirected output to this application's window.
@@ -400,9 +401,10 @@ namespace ppgSH
             process.WaitForExit();
             process.Close();
             return true;
-
-            
         }
+        //uruchomienie procesu bez przekierowania we/wy w tle
+        //konsola nie czeka na zakończenie procesu bo działa on w tle
+        //mozna dalej pracowac w konsoli
         static bool uruchom_bez_przekierowania_w_tle(string program, string argumenty)
         {
             Process process = new Process();

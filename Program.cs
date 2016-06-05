@@ -309,10 +309,11 @@ namespace ppgSH
             catch (ArgumentException)
             {
                 return;
-            } //pierwszy wyraz jest komendą
+            } 
+            //jesli polecenie jest puste
             if ((polecenie == null) ||(polecenie.Length==0)) return;
+            //pierwszy wyraz jest komendą
             komenda = polecenie[0];
-            
             //połączenie w 1 string
             argumenty = String.Join(" ", polecenie, 1, polecenie.Length - 1);
             //sprawdzenie czy polecenie zawiera znaki przekierowań < i >
@@ -402,7 +403,7 @@ namespace ppgSH
                 Console.WriteLine(e.Message);
                 return false;
             }
-            // Synchronously read the standard output of the spawned process. 
+             // Synchronously read the standard output of the spawned process. 
             StreamReader reader = process.StandardOutput;
             string output = reader.ReadToEnd();
             // Write the redirected output to this application's window.
@@ -410,9 +411,10 @@ namespace ppgSH
             process.WaitForExit();
             process.Close();
             return true;
-
-            
         }
+        //uruchomienie procesu bez przekierowania we/wy w tle
+        //konsola nie czeka na zakończenie procesu bo działa on w tle
+        //mozna dalej pracowac w konsoli
         static bool uruchom_bez_przekierowania_w_tle(string program, string argumenty)
         {
             Process process = new Process();
@@ -450,15 +452,18 @@ namespace ppgSH
             process.StartInfo.Arguments = argumenty;
             process.StartInfo.UseShellExecute = false;
             if (przekierowanie_in) process.StartInfo.RedirectStandardInput = true; //przekierowanie strumienia wejściowego
-            if (przekierowanie_out) //przekierowanie strumienia wyjściowego
+            //przekierowanie strumienia wyjściowego
+            //jesli jest przekierowanie wyjściowe lub samo przekierowanie wejściowe
+            //w 2 przypadku przekieruj na konsolę
+            if (przekierowanie_out || (przekierowanie_in && !przekierowanie_out))
             {
                 process.StartInfo.RedirectStandardOutput = true;
                 process.StartInfo.RedirectStandardError = true;
             }
             process.Start(); //uruchomienie procesu potomka
-            StreamWriter writer=null;
-            StreamReader reader=null,stdError=null;
-            string text="";
+            StreamWriter writer = null;
+            StreamReader reader = null, stdError = null;
+            string text = "";
             //obsługa przekierowania wejściowego
             if (przekierowanie_in)
             {
@@ -494,59 +499,70 @@ namespace ppgSH
                 //zapisanie do procesu
                 writer.WriteLine(text);
             }
-            // Synchronously read the standard output of the spawned process. 
-            if (przekierowanie_out)
+
+
+            // jesli jest przekierowanie wyjścia lub
+            //jeśli jest tylko przekierowanie wejściowe to skieruj wyjście procesu na konsolę
+            if (przekierowanie_out || (przekierowanie_in && !przekierowanie_out))
             {
                 reader = process.StandardOutput;
                 stdError = process.StandardError;
                 string output = reader.ReadToEnd();
                 string error = stdError.ReadToEnd();
-                //jeśli plik nie ustnieje to utwórz i zapisz treść a jeśli istnieje to dopisz
-                try
+
+                if (przekierowanie_out)
                 {
-                    File.AppendAllText(@plik_out, output + error);
-                }
-                catch (IOException)
+                    try
+                    {
+                        //jeśli plik nie ustnieje to utwórz i zapisz treść a jeśli istnieje to dopisz
+                        File.AppendAllText(@plik_out, output + error);
+                    }
+                    catch (IOException)
+                    {
+                        Console.WriteLine("Błąd we/wy ({0})", @plik_out);
+                        process.Close();
+                        reader.Close();
+                        stdError.Close();
+                        if (przekierowanie_in) writer.Close();
+                        return false;
+                    }
+                    catch (SecurityException e)
+                    {
+                        Console.WriteLine(e.Message);
+                        process.Close();
+                        reader.Close();
+                        stdError.Close();
+                        if (przekierowanie_in) writer.Close();
+                        return false;
+                    }
+                    catch (UnauthorizedAccessException e)
+                    {
+                        Console.WriteLine(e.Message);
+                        process.Close();
+                        reader.Close();
+                        stdError.Close();
+                        if (przekierowanie_in) writer.Close();
+                        return false;
+                    }
+
+                } else
+                    //wypisz na konsoli
+                    Console.WriteLine(output + error);
+
+                //oczekiwanie na zakończenie procesu
+                process.WaitForExit();
+                //zwolnienie zasobów 
+                process.Close();
+                if (przekierowanie_in) writer.Close();
+                if (przekierowanie_out)
                 {
-                    Console.WriteLine("Błąd we/wy ({0})", @plik_out);
-                    process.Close();
                     reader.Close();
                     stdError.Close();
-                    if (przekierowanie_in) writer.Close();
-                    return false;
-                }
-                catch (SecurityException e)
-                {
-                    Console.WriteLine(e.Message);
-                    process.Close();
-                    reader.Close();
-                    stdError.Close();
-                    if (przekierowanie_in) writer.Close();
-                    return false;
-                }
-                catch (UnauthorizedAccessException e)
-                {
-                    Console.WriteLine(e.Message);
-                    process.Close();
-                    reader.Close();
-                    stdError.Close();
-                    if (przekierowanie_in) writer.Close();
-                    return false;
                 }
                 
-            }
-            //oczekiwanie na zakończenie procesu
-            process.WaitForExit();
-            //zwolnienie zasobów 
-            process.Close();
-            if (przekierowanie_in) writer.Close();
-            if (przekierowanie_out)
-            {
-                reader.Close();
-                stdError.Close();
+
             }
             return true;
-           
         }
 
         /**

@@ -11,18 +11,26 @@ QUIT        wyjśćie z konsoli
 MyShell nie rozróżnia wielkości liter więc można pisać komendy 
 małymi lub dużymi literami. Jeśli MyShell nie znajdzie polecenia
 jako komendy wbudowanej to szuka czy istnieje program o tej nazwie
-w katalogu bieżącym oraz w katalogach ustawionych zmienną  
--path-. Jeśli program istnieje to MyShell uruchamia go z podanymi
-parametrami.Wywołanie:
-program-name arg1 ... argn > plik.txt
+w katalogu bieżącym oraz w katalogach ustawionych zmienną -path-.
+Jeśli program istnieje to MyShell uruchamia go z podanymi parametrami.
+Wywołanie:
+program-name arg1 arg2 ... argn
+uruchamia program "program-name" jednocześnie przekierowując jego
+wyjście na konsolę MyShell. Konsola czeka na zakończenie wykonywania
+procesu.Natomiast wywołanie:
+program-name& arg1 arg2 ... argn
+powoduje uruchomienie programu "program-name" w tle. Jego wejście
+i wyjście nie jest przekierowywane. Można pracować na konsoli.Wywołanie: 
+program-name arg1 arg2 ... argn > plik.txt
 powoduje przekierowanie wyjścia programu "program-name" do pliku
 "plik.txt". Wywołanie:
-program-name arg1 ... argn < plik.txt
+program-name arg1 arg2 ... argn < plik.txt
 powoduje że program "program-name" bedzie czytał dane wejściowe
-z pliku "plik.txt". Program MyShell można uruchomić z parametrem 
-którym jest nazwa pliku np.:
-MyShell batch.txt
-wtedy Myshell wykonuje polecenia zawarte w pliku wsadowym batch.txt.
+z pliku "plik.txt". Jeśli nie jest podane dodatkowo przekierowanie
+wyjścia to program bedzie wypisywał dane na konsoli MyShell. Program 
+MyShell można uruchomić z parametrem którym jest nazwa pliku np.:
+MyShell batch.ppgsh
+wtedy Myshell wykonuje polecenia zawarte w pliku wsadowym batch.ppgsh
 koniec
 Polecenie CD
 CD - pokazuje lub zmienia bieżący katalog
